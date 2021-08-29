@@ -12,7 +12,7 @@
 # https://www.debian.org/ports/
 : "${XX_DEBIAN_ARCH=unknown}"
 : "${XX_TRIPLE=unknown-unknown-none}"
-: "${XX_VENDOR=unknown}"
+: "${XX_VENDOR=}"
 : "${XX_LIBC=}"
 
 usage() {
@@ -84,24 +84,38 @@ if [ -n "$TARGETPLATFORM" ]; then
   fi
 fi
 
+distro=""
 # detect distro vendor
 # shellcheck disable=SC1091
 if . /etc/os-release 2>/dev/null; then
-  XX_VENDOR=$ID
-fi
-
-if [ "$TARGETOS" = "darwin" ]; then
-  XX_VENDOR="apple"
+  distro=$ID
 fi
 
 vendor=""
+if [ -z "$XX_VENDOR" ]; then
 
-if [ "$XX_VENDOR" != "unknown" ] && [ "$XX_VENDOR" != "debian" ]; then
+  if [ -n "$distro" ]; then
+    XX_VENDOR="$distro"
+  fi
+
+  if [ "$TARGETOS" = "darwin" ]; then
+    XX_VENDOR="apple"
+  fi
+
+  if [ -z "$XX_VENDOR" ]; then
+    XX_VENDOR="unknown"
+  fi
+
+  if [ "$XX_VENDOR" != "unknown" ] && [ "$XX_VENDOR" != "debian" ]; then
+    vendor="-${XX_VENDOR}"
+  fi
+
+else
   vendor="-${XX_VENDOR}"
 fi
 
 if [ -z "$XX_LIBC" ]; then
-  if [ "$XX_VENDOR" = "alpine" ]; then
+  if [ "$distro" = "alpine" ]; then
     XX_LIBC="musl"
   else
     XX_LIBC="gnu"
@@ -302,7 +316,6 @@ case "$1" in
     echo "XX_OS=${TARGETOS}"
     echo "XX_ARCH=${TARGETARCH}"
     echo "XX_MARCH=${XX_MARCH}"
-    echo "XX_VENDOR=${XX_VENDOR}"
     if [ "$TARGETOS" = "linux" ]; then
       echo "XX_PKG_ARCH=${XX_PKG_ARCH}"
       echo "XX_TRIPLE=${XX_TRIPLE}"

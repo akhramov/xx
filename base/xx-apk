@@ -83,6 +83,7 @@ cmd() {
     root="/${XX_TRIPLE}"
   fi
   n=$#
+  isrustlib=
   for a in "$@"; do
     if [ $# = $n ]; then set --; fi
     case "$a" in
@@ -91,6 +92,10 @@ cmd() {
         ;;
       "xx-cxx-essentials")
         set -- "$@" g++
+        ;;
+      "rust-stdlib")
+        set -- "$@" rust-stdlib
+        isrustlib=1
         ;;
       *)
         set -- "$@" "$a"
@@ -105,6 +110,10 @@ cmd() {
   if xx-info is-cross; then
     if [ -z "$XX_APK_KEEP_BINARIES" ]; then
       rm -rf "/${XX_TRIPLE:?}/usr/bin/*"
+    fi
+    # rust stdlib is accessed from the real root
+    if [ -n "$isrustlib" ] && [ -d "$root/usr/lib/rustlib/$(xx-info)" ]; then
+      ln -s "$root/usr/lib/rustlib/$(xx-info)" "/usr/lib/rustlib/$(xx-info)" || true
     fi
   fi
 }
